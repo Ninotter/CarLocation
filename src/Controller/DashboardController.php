@@ -38,13 +38,29 @@ class DashboardController extends AbstractController
         $params = [];
         $params['paymentrows'] = $paymentRows;
         return $this->render('dashboard/all_payments.html.twig', $params);
-    }   
-    #[Route('/dashboard/details/{id}', name: 'app_dashboard_details')]
-    public function GetPageDetails(string $id): Response
+    }
+
+    #[Route('/dashboard/payments/{id}', name: 'app_dashboard_payments_details')]
+    public function GetPaymentsDetails(string $id): Response
     {
         $stripe = new \Stripe\StripeClient($_ENV["STRIPE_SECRET"]);
-        $paymentIntents = $stripe->paymentIntents->retrieve(['limit' => 20]);
+        if(isset($_POST['action_return'])){
+            $paymentIntentsBeforeUpdate = $stripe->paymentIntents->retrieve($id, ['expand' => ['payment_method']]);
+            // $paymentIntents = $stripe->paymentIntents->update($id, ['amount' => $paymentIntentsBeforeUpdate->]);
+            
+        }
+
+
+
+        $paymentIntents = $stripe->paymentIntents->retrieve($id, ['expand' => ['payment_method']]);
+
         $params = [];
-        return $this->render('dashboard/all_payments.html.twig', $params);
+        $params['id'] = $id;
+        $params['status'] = $paymentIntents->status;
+        $params['amount'] = $paymentIntents->amount;
+        $params['amount_received'] = $paymentIntents->amount_received;
+        $params['last4'] = $paymentIntents->payment_method->card->last4;
+
+        return $this->render('dashboard/payment_details.html.twig', $params);
     }
 }

@@ -118,12 +118,14 @@ class FormController extends AbstractController
       return $this->redirect('/form');
     }
     $decodedToken = null;
+
     try{
       $decodedToken = JWT::decode($jwt, new Key("SouquezLesArtibuses", 'HS256'));
       $decodedToken = (array) $decodedToken;
     }catch(Exception $e){
       return $this->redirect('/form');
     }
+
     $stripe = new \Stripe\StripeClient($_ENV["STRIPE_SECRET"]);
     try{
       $checkout_session = $stripe->checkout->sessions->retrieve($idtransaction, ['expand' => ['payment_intent.payment_method']]);
@@ -131,9 +133,39 @@ class FormController extends AbstractController
     catch(Exception $e){
       return $this->redirect('/form');
     }
+    $currencySymbol = "";
+    switch($checkout_session->payment_intent->currency){
+          case "eur":
+            $currencySymbol = '€';
+            break;
+          case "usd":
+          case "aud":
+            $currencySymbol = '$';
+            break;
+          case "gbp":
+            $currencySymbol = '£';
+            break;
+          case "jpy":
+            $currencySymbol = '¥';
+            break;
+          default:
+            $currencySymbol = '';
+            break;
+    }
+
     if(isset($_POST['send_mail'])){
       $email = $checkout_session->customer_details->email;
-      $this->SendEmail($email, $idtransaction, $decodedToken['nom'], $decodedToken['prenom'], $decodedToken['age'], $decodedToken['ville'], $decodedToken['vehicule'], $decodedToken['token'], $checkout_session->amount_total, $checkout_session->payment_intent->payment_method->card->last4);
+      $this->SendEmail($email, 
+      $idtransaction, 
+      $decodedToken['nom'], 
+      $decodedToken['prenom'], 
+      $decodedToken['age'], 
+      $decodedToken['ville'], 
+      $decodedToken['vehicule'],
+      $decodedToken['token'], 
+      chunk_split($checkout_session->amount_total, 3, ' '), 
+      $checkout_session->payment_intent->payment_method->card->last4,
+      $currencySymbol);
     }
 
     $params = [];
@@ -146,13 +178,14 @@ class FormController extends AbstractController
     $params += ['vehicule' => $decodedToken['vehicule']];
     $params += ['token' => $decodedToken['token']];
     $params += ['email' => $checkout_session->customer_details->email];
-    $params += ['amount' => $checkout_session->amount_total];
+    $params += ['amount' => chunk_split($checkout_session->amount_total, 3, ' ')];
     $params += ['last4' => $checkout_session->payment_intent->payment_method->card->last4];
+    $params += ['currency_symbol' => $currencySymbol];
 
     return $this->render('form/form_success.html.twig', $params);
   }
 
-  private function SendEmail($email, $idtransaction, $nom, $prenom, $age, $ville, $vehicule, $token, $amount, $last4){
+  private function SendEmail($email, $idtransaction, $nom, $prenom, $age, $ville, $vehicule, $token, $amount, $last4, $currencySymbol){
     // Configure API key authorization: api-key
     $config = Configuration::getDefaultConfiguration()->setApiKey('api-key', $_ENV["SENDINBLUE_API_KEY"]);
     $apiInstance = new TransactionalEmailsApi(
@@ -162,7 +195,7 @@ class FormController extends AbstractController
     $sendSmtpEmail = new \SendinBlue\Client\Model\SendSmtpEmail();
     $sendSmtpEmail['to'] = array(array('email'=>$email, 'name'=> $prenom . ' ' . $nom));
     $sendSmtpEmail['templateId'] = 1;
-    $sendSmtpEmail['params'] = array('prenom'=> $prenom, 'nom'=>$nom, 'age'=>$age, 'ville'=>$ville, 'email'=>$email ,'vehicule'=>$vehicule, 'token'=>$token, 'amount'=>$amount, 'last4'=>$last4, 'transaction_id'=>$idtransaction);
+    $sendSmtpEmail['params'] = array('prenom'=> $prenom, 'nom'=>$nom, 'age'=>$age, 'ville'=>$ville, 'email'=>$email ,'vehicule'=>$vehicule, 'token'=>$token, 'amount'=>$amount, 'last4'=>$last4, 'transaction_id'=>$idtransaction, 'currency_symbol'=>$currencySymbol);
     $sendSmtpEmail['headers'] = array('X-Mailin-custom'=>'custom_header_1:custom_value_1|custom_header_2:custom_value_2');
     
     try {

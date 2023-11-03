@@ -49,8 +49,7 @@
 <table>
     <thead>
         <tr>
-            <th>Amount</th>
-            <th>Status</th>
+            <th>Amount</th>            <th>Status</th>
             <th>Détails</th>
         </tr>
     </thead>
@@ -60,7 +59,7 @@
                 <td>{{ paymentRow.amount }}</td>
                 <td class={% if paymentRow.status == 'Succès' %}statussuccess{% elseif paymentRow.status == 'Non capturé' %}statuscapture{% endif %}>{{ paymentRow.status }}</td>
                 <td>
-                    <button onclick="detailsPayment({{ paymentRow.id }})">Détails</button>
+                    <button onclick="window.location.href='payments/{{ paymentRow.id }}'">Détails</button>
                 </td>
             </tr>
         {% endfor %}
