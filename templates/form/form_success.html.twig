@@ -1,0 +1,60 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Location{% endblock %}
+
+{% block body %}
+<style>
+.card_remerciement {
+  width: 80%;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 20px;
+  text-align: center;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  background-color: #f7f7f7;
+}
+
+.card_remerciement h1 {
+  font-size: 24px;
+}
+
+.card_remerciement h2 {
+  font-size: 18px;
+}
+
+.card_remerciement h3 {
+  font-size: 16px;
+}
+
+.card_remerciement p {
+  font-size: 14px;
+  margin: 10px 0;
+}
+
+.card_remerciement b {
+  font-weight: bold;
+}
+
+</style>
+
+<div class="card_remerciement">
+    <h1>✅ Merci pour votre paiement.</h1>
+    <h2>La transaction {{ idtransaction }} s'est déroulée avec succès.</h2>
+    <h3>Récapitulatif de votre commande : </h3>
+    <p><b>Conducteur :</b> {{ nom }} {{prenom}} : {{age}} ans</p>
+    <p><b>Véhicule :</b> {{ vehicule }}</p>
+    <p><b>Ville :</b> {{ ville }}</p>
+
+    <p><b>Mail :</b> {{ email }}</p>
+    <p><b>Montant du dépôt de garantie :</b> {{ amount }}</p>
+    <p><b>Versement réalisé avec une carte bancaire terminant par :</b> {{ last4 }}</p>
+
+{# if mail is not sent show form + button, else show it #}
+
+    <form method="post">
+        <button type="submit" name="send_mail">Recevoir une confirmation par mail</button>
+    <form>
+</div>
+{% endblock %}
